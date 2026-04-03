@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner";
 import { APP_DESCRIPTION, APP_NAME, SERVER_URL } from "@/lib/constants";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
@@ -25,7 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-full flex flex-col">
+      <body
+        className={`${inter.variable} min-h-full flex flex-col`}
+        suppressHydrationWarning
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -33,6 +37,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster richColors />
         </ThemeProvider>
       </body>
     </html>
