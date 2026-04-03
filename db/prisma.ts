@@ -17,7 +17,7 @@ export const prisma =
           compute(
             product: Prisma.ProductGetPayload<{ select: { price: true } }>,
           ) {
-            return product.price.toFixed(2); // "49.99" format
+            return product.price.toFixed(2); // "49.99" format for frontend display
           },
         },
         rating: {
