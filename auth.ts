@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { compareSync } from "bcrypt-ts-edge";
 import type { NextAuthConfig } from "next-auth";
 import NextAuth from "next-auth";
@@ -19,30 +19,26 @@ export const config = {
     maxAge: 30 * 24 * 60 * 60,
   },
   adapter: PrismaAdapter(prisma),
+
   providers: [
     CredentialsProvider({
       credentials: {
-        email: {
-          type: "email",
-        },
+        email: { type: "email" },
         password: { type: "password" },
       },
       async authorize(credentials) {
-        if (credentials == null) return null;
+        if (!credentials) return null;
 
-        // Find user in database
         const user = await prisma.user.findFirst({
-          where: {
-            email: credentials.email as string,
-          },
+          where: { email: credentials.email as string },
         });
-        // Check if user exists and password is correct
+
         if (user && user.password) {
           const isMatch = compareSync(
             credentials.password as string,
             user.password,
           );
-          // If password is correct, return user object
+
           if (isMatch) {
             return {
               id: user.id,
@@ -52,29 +48,30 @@ export const config = {
             };
           }
         }
-        // If user doesn't exist or password is incorrect, return null
+
         return null;
       },
     }),
   ],
+
   callbacks: {
-    async session({ session, user, trigger, token }: any) {
-      // Set the user id on the session
-      session.user.id = token.sub;
-      session.user.name = token.name;
-      session.user.role = token.role;
-      // If there is an update, set the name on the session
-      if (trigger === "update" && token.name) {
+    async session({ session, token }: any) {
+      if (session.user) {
+        session.user.id = token.sub;
         session.user.name = token.name;
+        session.user.role = token.role;
       }
       return session;
     },
+
     async jwt({ token, user, trigger, session }: any) {
+      // On login
       if (user) {
-        // Assign user properties to the token
         token.id = user.id;
         token.role = user.role;
+        token.name = user.name;
 
+        // Merge guest cart on login
         if (trigger === "signIn" || trigger === "signUp") {
           const cookiesObject = await cookies();
           const sessionCartId = cookiesObject.get("sessionCartId")?.value;
@@ -85,12 +82,10 @@ export const config = {
             });
 
             if (sessionCart) {
-              // Overwrite any existing user cart
               await prisma.cart.deleteMany({
                 where: { userId: user.id },
               });
 
-              // Assign the guest cart to the logged-in user
               await prisma.cart.update({
                 where: { id: sessionCart.id },
                 data: { userId: user.id },
@@ -98,6 +93,11 @@ export const config = {
             }
           }
         }
+      }
+
+      // ✅ FIX: Handle session update (e.g. name change)
+      if (trigger === "update" && session?.user?.name) {
+        token.name = session.user.name;
       }
 
       return token;

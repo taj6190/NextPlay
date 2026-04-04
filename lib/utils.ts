@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import qs from "query-string";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -52,8 +53,8 @@ export const round2 = (value: number | string) => {
   }
 };
 
-const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
-  currency: "USD",
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-BD", {
+  currency: "BDT",
   style: "currency",
   minimumFractionDigits: 2,
 });
@@ -67,4 +68,74 @@ export function formatCurrency(amount: number | string | null) {
   } else {
     return "NaN";
   }
+}
+
+// Format ID — show last 6 characters
+export function formatId(id: string) {
+  return `..${id.substring(id.length - 6)}`;
+}
+
+// Format date time
+export function formatDateTime(dateString: Date | string) {
+  const dateTimeOptions: Intl.DateTimeFormatOptions = {
+    month: "short",
+    year: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+  };
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    weekday: "short",
+    month: "short",
+    year: "numeric",
+    day: "numeric",
+  };
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+  };
+
+  const formattedDateTime = new Date(dateString).toLocaleString(
+    "en-US",
+    dateTimeOptions,
+  );
+  const formattedDate = new Date(dateString).toLocaleString(
+    "en-US",
+    dateOptions,
+  );
+  const formattedTime = new Date(dateString).toLocaleString(
+    "en-US",
+    timeOptions,
+  );
+
+  return {
+    dateTime: formattedDateTime,
+    dateOnly: formattedDate,
+    timeOnly: formattedTime,
+  };
+}
+
+// Form Pagination Links
+export function formUrlQuery({
+  params,
+  key,
+  value,
+}: {
+  params: string;
+  key: string;
+  value: string | null;
+}) {
+  const query = qs.parse(params);
+
+  query[key] = value;
+
+  return qs.stringifyUrl(
+    {
+      url: window.location.pathname,
+      query,
+    },
+    { skipNull: true },
+  );
 }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import type { NextAuthConfig } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -15,15 +15,22 @@ export const authConfig = {
   providers: [],
   callbacks: {
     authorized({ request, auth }: any) {
+      const protectedPaths = [/\/profile/, /\/admin/];
+      const { pathname } = request.nextUrl;
+
+      if (protectedPaths.some((p) => p.test(pathname)) && !auth) {
+        return Response.redirect(
+          new URL(`/sign-in?callbackUrl=${pathname}`, request.url),
+        );
+      }
+
       if (!request.cookies.get("sessionCartId")) {
         const sessionCartId = crypto.randomUUID();
-        const newRequestHeaders = new Headers(request.headers);
-        const response = NextResponse.next({
-          request: { headers: newRequestHeaders },
-        });
+        const response = NextResponse.next();
         response.cookies.set("sessionCartId", sessionCartId);
         return response;
       }
+
       return true;
     },
   },

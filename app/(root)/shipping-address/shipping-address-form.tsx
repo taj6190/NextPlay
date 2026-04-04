@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { updateUserAddress } from "@/lib/actions/user.actions";
+import { saveShippingAddress } from "@/lib/actions/checkout.actions";
 import { shippingAddressDefaultValues } from "@/lib/constants";
 import { shippingAddressSchema } from "@/lib/validator";
 import { ShippingAddress } from "@/types";
@@ -23,8 +23,6 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-type ShippingFormValues = z.infer<typeof shippingAddressSchema>;
-
 const ShippingAddressForm = ({
   address,
 }: {
@@ -33,14 +31,16 @@ const ShippingAddressForm = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<ShippingFormValues>({
+  const form = useForm<z.infer<typeof shippingAddressSchema>>({
     resolver: zodResolver(shippingAddressSchema),
     defaultValues: address || shippingAddressDefaultValues,
   });
 
-  const onSubmit: SubmitHandler<ShippingFormValues> = (values) => {
+  const onSubmit: SubmitHandler<z.infer<typeof shippingAddressSchema>> = (
+    values,
+  ) => {
     startTransition(async () => {
-      const res = await updateUserAddress(values);
+      const res = await saveShippingAddress(values);
       if (!res.success) {
         toast.error(res.message);
         return;
@@ -52,92 +52,53 @@ const ShippingAddressForm = ({
   return (
     <>
       <CheckoutSteps current={1} />
-      <div className="max-w-md mx-auto space-y-4">
-        <h1 className="h2-bold mt-4">Shipping Address</h1>
+      <div className="max-w-md mx-auto space-y-4 mt-8">
+        <h1 className="h2-bold">Shipping Address</h1>
         <p className="text-sm text-muted-foreground">
-          Please enter the address that you want to ship to
+          Please enter the address you want to ship to
         </p>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex flex-col gap-5 md:flex-row">
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter full name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div>
-              <FormField
-                control={form.control}
-                name="streetAddress"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex flex-col gap-5 md:flex-row">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter city" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel>Country</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter country" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="postalCode"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel>Postal Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter postal code" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex gap-2">
+            {["fullName", "streetAddress", "city", "postalCode", "country"].map(
+              (fieldName) => (
+                <FormField
+                  key={fieldName}
+                  control={form.control}
+                  name={
+                    fieldName as keyof z.infer<typeof shippingAddressSchema>
+                  }
+                  render={({ field }) => (
+                    <FormItem
+                      className={
+                        fieldName === "city" || fieldName === "postalCode"
+                          ? "w-full"
+                          : ""
+                      }
+                    >
+                      <FormLabel>
+                        {fieldName
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())}
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder={`Enter ${fieldName}`} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ),
+            )}
+
+            <div className="flex justify-end">
               <Button type="submit" disabled={isPending}>
                 {isPending ? (
-                  <Loader className="animate-spin w-4 h-4" />
+                  <Loader className="animate-spin w-4 h-4 mr-2" />
                 ) : (
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 mr-2" />
                 )}
-                Continue
+                Continue to Payment
               </Button>
             </div>
           </form>
