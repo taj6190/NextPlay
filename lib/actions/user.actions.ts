@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, signOut as nextAuthSignOut, signIn } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import { prisma } from "@/db/prisma";
 import { ShippingAddress } from "@/types";
 import { hashSync } from "bcrypt-ts-edge";
@@ -36,9 +36,9 @@ export async function signInWithCredentials(
   }
 }
 
-// Sign the user out
 export async function SignOutUser() {
-  await nextAuthSignOut();
+  "use server";
+  await signOut({ redirectTo: "/" });
 }
 
 // Register a new user
